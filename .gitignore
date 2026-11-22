@@ -1,0 +1,13 @@
+src/
+staging/
+rootfs-2.3-stock.squashfs
+rootfs-2.4.squashfs
+rootfs-2.4/
+rootfs-2.4-build/
+.fakeroot.state
+autoexec-2.4.sh
+bench/sdl_zlib_bench
+*.o
+*.lo
+*.so*
+*.squashfs
