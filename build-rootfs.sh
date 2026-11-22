@@ -120,7 +120,9 @@ sed -i '/IMPORT{program}="\/sbin\/blkid -o udev -p %N"/a ACTION=="add", ENV{ID_F
 
 # Fast S60udev: wait briefly for udevd control socket, then trigger external SD/USB block
 # partition uevents directly via /sys/block (Linux 2.6.31 CONFIG_SYSFS_DEPRECATED_V2 does
-# not populate /sys/class/block, so udevadm --subsystem-match=block matches 0 devices!)
+# not populate /sys/class/block, so udevadm --subsystem-match=block matches 0 devices!).
+# Mount FAT/exFAT/NTFS partitions FIRST synchronously (~40ms!) so /media/RETROFW is 100%
+# ready before GMenuNX+ starts; defer slow ext2/3/4 journal recovery to the background!
 cat << 'EOF' > "$ROOT/etc/init.d/S60udev"
 #!/bin/sh
 case "$1" in
@@ -130,10 +132,31 @@ case "$1" in
             usleep 25000 2>/dev/null || sleep 1
             i=$((i + 1))
         done
+        slow_devs=""
         for u in /sys/block/mmcblk1/mmcblk1p*/uevent /sys/block/sd*/sd*/uevent; do
-            [ -w "$u" ] && echo add > "$u" 2>/dev/null
+            [ -w "$u" ] || continue
+            devname=$(basename "$(dirname "$u")")
+            fstype=$(/sbin/blkid -s TYPE -o value "/dev/$devname" 2>/dev/null)
+            case "$fstype" in
+                swap|"")
+                    continue
+                    ;;
+                vfat|msdos|exfat|ntfs)
+                    echo add > "$u" 2>/dev/null
+                    ;;
+                *)
+                    slow_devs="$slow_devs $u"
+                    ;;
+            esac
         done
         /sbin/udevadm settle --timeout=3 2>/dev/null
+        if [ -n "$slow_devs" ]; then
+            (
+                for u in $slow_devs; do
+                    echo add > "$u" 2>/dev/null
+                done
+            ) &
+        fi
         ;;
 esac
 exit 0
