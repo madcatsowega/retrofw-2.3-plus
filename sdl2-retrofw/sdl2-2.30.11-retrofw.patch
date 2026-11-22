@@ -1,0 +1,280 @@
+diff --git a/configure b/configure
+index 0b41e13..afe325f 100755
+--- a/configure
++++ b/configure
+@@ -929,6 +929,7 @@ enable_video_directfb
+ enable_directfb_shared
+ enable_video_kmsdrm
+ enable_kmsdrm_shared
++enable_video_retrofw
+ enable_video_dummy
+ enable_video_offscreen
+ enable_video_opengl
+@@ -1745,6 +1746,7 @@ Optional Features:
+                           dynamically load directfb support [default=yes]
+   --enable-video-kmsdrm   use KMSDRM video driver [default=yes]
+   --enable-kmsdrm-shared  dynamically load kmsdrm support [default=yes]
++  --enable-video-retrofw  use RetroFW /dev/fb0 video driver [default=no]
+   --enable-video-dummy    use dummy video driver [default=yes]
+   --enable-video-offscreen
+                           use offscreen video driver [default=yes]
+@@ -25786,6 +25788,26 @@ printf "%s\n" "$kmsdrm_shared" >&6; }
+     fi
+ }
+ 
++CheckRetroFWVideo()
++{
++    # Check whether --enable-video-retrofw was given.
++if test ${enable_video_retrofw+y}
++then :
++  enableval=$enable_video_retrofw;
++else $as_nop
++  enable_video_retrofw=no
++fi
++
++    if test x$enable_video_retrofw = xyes; then
++
++printf "%s\n" "#define SDL_VIDEO_DRIVER_RETROFW 1" >>confdefs.h
++
++        SOURCES="$SOURCES $srcdir/src/video/retrofw/*.c"
++        have_video=yes
++        SUMMARY_video="${SUMMARY_video} retrofw"
++    fi
++}
++
+ CheckDummyVideo()
+ {
+     # Check whether --enable-video-dummy was given.
+@@ -28540,6 +28562,7 @@ printf "%s\n" "#define SDL_VIDEO_DRIVER_ANDROID 1" >>confdefs.h
+         CheckVisibilityHidden
+         CheckWerror
+         CheckDeclarationAfterStatement
++        CheckRetroFWVideo
+         CheckDummyVideo
+         CheckOffscreenVideo
+         CheckDiskAudio
+@@ -28810,6 +28833,7 @@ printf "%s\n" "#define SDL_TIMER_UNIX 1" >>confdefs.h
+         CheckGDwarf4
+         CheckWerror
+         CheckDeclarationAfterStatement
++        CheckRetroFWVideo
+         CheckDummyVideo
+         CheckOffscreenVideo
+         CheckDiskAudio
+@@ -29135,6 +29159,7 @@ printf "%s\n" "#define SDL_FILESYSTEM_HAIKU 1" >>confdefs.h
+         CheckWerror
+         CheckNoErrorDeprecatedDeclarationsWerror
+         CheckDeclarationAfterStatement
++        CheckRetroFWVideo
+         CheckDummyVideo
+         CheckOffscreenVideo
+         CheckDiskAudio
+@@ -29274,6 +29299,7 @@ printf "%s\n" "#define SDL_VIDEO_RENDER_OGL_ES2 1" >>confdefs.h
+         CheckWerror
+         CheckNoErrorDeprecatedDeclarationsWerror
+         CheckDeclarationAfterStatement
++        CheckRetroFWVideo
+         CheckDummyVideo
+         CheckOffscreenVideo
+         CheckDiskAudio
+@@ -29420,6 +29446,7 @@ printf "%s\n" "#define SDL_AUDIO_DRIVER_EMSCRIPTEN 1" >>confdefs.h
+         CheckVisibilityHidden
+         CheckWerror
+         CheckDeclarationAfterStatement
++        CheckRetroFWVideo
+         CheckDummyVideo
+         CheckOffscreenVideo
+         CheckDiskAudio
+@@ -29480,6 +29507,7 @@ printf "%s\n" "#define SDL_TIMER_UNIX 1" >>confdefs.h
+         CheckVisibilityHidden
+         CheckWerror
+         CheckDeclarationAfterStatement
++        CheckRetroFWVideo
+         CheckDummyVideo
+         CheckOffscreenVideo
+         CheckDiskAudio
+diff --git a/configure.ac b/configure.ac
+index be32efa..71029f9 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -2451,6 +2451,19 @@ CheckKMSDRM()
+     fi
+ }
+ 
++CheckRetroFWVideo()
++{
++    AC_ARG_ENABLE(video-retrofw,
++[AS_HELP_STRING([--enable-video-retrofw], [use RetroFW /dev/fb0 video driver [default=no]])],
++                  , enable_video_retrofw=no)
++    if test x$enable_video_retrofw = xyes; then
++        AC_DEFINE(SDL_VIDEO_DRIVER_RETROFW, 1, [ ])
++        SOURCES="$SOURCES $srcdir/src/video/retrofw/*.c"
++        have_video=yes
++        SUMMARY_video="${SUMMARY_video} retrofw"
++    fi
++}
++
+ dnl rcg04172001 Set up the Null video driver.
+ CheckDummyVideo()
+ {
+@@ -3787,6 +3800,7 @@ case "$host" in
+         CheckVisibilityHidden
+         CheckWerror
+         CheckDeclarationAfterStatement
++        CheckRetroFWVideo
+         CheckDummyVideo
+         CheckOffscreenVideo
+         CheckDiskAudio
+@@ -4023,6 +4037,7 @@ case "$host" in
+         CheckGDwarf4
+         CheckWerror
+         CheckDeclarationAfterStatement
++        CheckRetroFWVideo
+         CheckDummyVideo
+         CheckOffscreenVideo
+         CheckDiskAudio
+@@ -4249,6 +4264,7 @@ dnl BeOS support removed after SDL 2.0.1. Haiku still works.  --ryan.
+         CheckWerror
+         CheckNoErrorDeprecatedDeclarationsWerror
+         CheckDeclarationAfterStatement
++        CheckRetroFWVideo
+         CheckDummyVideo
+         CheckOffscreenVideo
+         CheckDiskAudio
+@@ -4366,6 +4382,7 @@ dnl BeOS support removed after SDL 2.0.1. Haiku still works.  --ryan.
+         CheckWerror
+         CheckNoErrorDeprecatedDeclarationsWerror
+         CheckDeclarationAfterStatement
++        CheckRetroFWVideo
+         CheckDummyVideo
+         CheckOffscreenVideo
+         CheckDiskAudio
+@@ -4492,6 +4509,7 @@ dnl BeOS support removed after SDL 2.0.1. Haiku still works.  --ryan.
+         CheckVisibilityHidden
+         CheckWerror
+         CheckDeclarationAfterStatement
++        CheckRetroFWVideo
+         CheckDummyVideo
+         CheckOffscreenVideo
+         CheckDiskAudio
+@@ -4544,6 +4562,7 @@ dnl BeOS support removed after SDL 2.0.1. Haiku still works.  --ryan.
+         CheckVisibilityHidden
+         CheckWerror
+         CheckDeclarationAfterStatement
++        CheckRetroFWVideo
+         CheckDummyVideo
+         CheckOffscreenVideo
+         CheckDiskAudio
+diff --git a/include/SDL_config.h.in b/include/SDL_config.h.in
+index 0d9fa14..d1fc46b 100644
+--- a/include/SDL_config.h.in
++++ b/include/SDL_config.h.in
+@@ -374,6 +374,7 @@
+ #undef SDL_VIDEO_DRIVER_COCOA
+ #undef SDL_VIDEO_DRIVER_DIRECTFB
+ #undef SDL_VIDEO_DRIVER_DIRECTFB_DYNAMIC
++#undef SDL_VIDEO_DRIVER_RETROFW
+ #undef SDL_VIDEO_DRIVER_DUMMY
+ #undef SDL_VIDEO_DRIVER_WINDOWS
+ #undef SDL_VIDEO_DRIVER_WAYLAND
+diff --git a/src/core/linux/SDL_evdev.c b/src/core/linux/SDL_evdev.c
+index de1b758..b194626 100644
+--- a/src/core/linux/SDL_evdev.c
++++ b/src/core/linux/SDL_evdev.c
+@@ -207,7 +207,41 @@ int SDL_EVDEV_Init(void)
+                     }
+                 }
+             } else {
+-                /* TODO: Scan the devices manually, like a caveman */
++                /* Scan /dev/input/event0..15 directly without libudev */
++                int idx;
++                char path[32];
++                for (idx = 0; idx < 16; ++idx) {
++                    int fd;
++                    unsigned long evbit[NBITS(EV_MAX)];
++                    unsigned long keybit[NBITS(KEY_MAX)];
++                    unsigned long absbit[NBITS(ABS_MAX)];
++                    unsigned long relbit[NBITS(REL_MAX)];
++                    int cls;
++
++                    SDL_snprintf(path, sizeof(path), "/dev/input/event%d", idx);
++                    fd = open(path, O_RDONLY | O_NONBLOCK | O_CLOEXEC);
++                    if (fd < 0) {
++                        continue;
++                    }
++                    SDL_zeroa(evbit);
++                    SDL_zeroa(keybit);
++                    SDL_zeroa(absbit);
++                    SDL_zeroa(relbit);
++                    if (ioctl(fd, EVIOCGBIT(0, sizeof(evbit)), evbit) >= 0) {
++                        ioctl(fd, EVIOCGBIT(EV_KEY, sizeof(keybit)), keybit);
++                        ioctl(fd, EVIOCGBIT(EV_ABS, sizeof(absbit)), absbit);
++                        ioctl(fd, EVIOCGBIT(EV_REL, sizeof(relbit)), relbit);
++                        cls = SDL_EVDEV_GuessDeviceClass(evbit, absbit, keybit, relbit);
++                        close(fd);
++                        if ((cls & (SDL_UDEV_DEVICE_MOUSE | SDL_UDEV_DEVICE_KEYBOARD |
++                                    SDL_UDEV_DEVICE_TOUCHSCREEN | SDL_UDEV_DEVICE_TOUCHPAD)) &&
++                            !(cls & SDL_UDEV_DEVICE_JOYSTICK)) {
++                            SDL_EVDEV_device_added(path, cls);
++                        }
++                    } else {
++                        close(fd);
++                    }
++                }
+             }
+         }
+ #endif /* SDL_USE_LIBUDEV */
+diff --git a/src/render/SDL_render.c b/src/render/SDL_render.c
+index a70d38e..21c5f71 100644
+--- a/src/render/SDL_render.c
++++ b/src/render/SDL_render.c
+@@ -1014,6 +1014,23 @@ SDL_Renderer *SDL_CreateRenderer(SDL_Window *window, int index, Uint32 flags)
+                 }
+             }
+         }
++#ifdef SDL_VIDEO_DRIVER_RETROFW
++        /* On GPU-less RetroFW devices, gracefully fall back to the software
++         * renderer if an app hardcoded SDL_RENDERER_ACCELERATED. */
++        if (!renderer && (flags & SDL_RENDERER_ACCELERATED)) {
++            Uint32 sw_flags = flags & ~SDL_RENDERER_ACCELERATED;
++            for (index = 0; index < n; ++index) {
++                const SDL_RenderDriver *driver = render_drivers[index];
++
++                if ((driver->info.flags & sw_flags) == sw_flags) {
++                    renderer = driver->CreateRenderer(window, sw_flags);
++                    if (renderer) {
++                        break;
++                    }
++                }
++            }
++        }
++#endif
+         if (!renderer) {
+             SDL_SetError("Couldn't find matching render driver");
+             goto error;
+diff --git a/src/video/SDL_sysvideo.h b/src/video/SDL_sysvideo.h
+index 258d2af..df7bc0e 100644
+--- a/src/video/SDL_sysvideo.h
++++ b/src/video/SDL_sysvideo.h
+@@ -473,6 +473,7 @@ extern VideoBootStrap N3DS_bootstrap;
+ extern VideoBootStrap RPI_bootstrap;
+ extern VideoBootStrap KMSDRM_bootstrap;
+ extern VideoBootStrap KMSDRM_LEGACY_bootstrap;
++extern VideoBootStrap RETROFW_bootstrap;
+ extern VideoBootStrap DUMMY_bootstrap;
+ extern VideoBootStrap DUMMY_evdev_bootstrap;
+ extern VideoBootStrap Wayland_bootstrap;
+diff --git a/src/video/SDL_video.c b/src/video/SDL_video.c
+index 1be5abf..0c0e352 100644
+--- a/src/video/SDL_video.c
++++ b/src/video/SDL_video.c
+@@ -140,6 +140,9 @@ static VideoBootStrap *bootstrap[] = {
+ #ifdef SDL_VIDEO_DRIVER_NGAGE
+     &NGAGE_bootstrap,
+ #endif
++#ifdef SDL_VIDEO_DRIVER_RETROFW
++    &RETROFW_bootstrap,
++#endif
+ #ifdef SDL_VIDEO_DRIVER_OFFSCREEN
+     &OFFSCREEN_bootstrap,
+ #endif

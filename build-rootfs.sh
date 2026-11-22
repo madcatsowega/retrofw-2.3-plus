@@ -10,11 +10,17 @@ echo "=== 1. Extracting stock RetroFW 2.3 rootfs ==="
 rm -rf "$ROOT" "$OUT"
 unsquashfs -d "$ROOT" "$STOCK" >/dev/null
 
-echo "=== 2. Installing MXU-accelerated libSDL-1.2.so.0.11.4 ==="
+echo "=== 2. Installing MXU-accelerated libSDL-1.2.so.0.11.4 & Native SDL 2.30.11 ==="
 cp -f "$BASE/staging/usr/lib/libSDL-1.2.so.0.11.4" "$ROOT/usr/lib/libSDL-1.2.so.0.11.4"
 chmod 755 "$ROOT/usr/lib/libSDL-1.2.so.0.11.4"
 ln -sf libSDL-1.2.so.0.11.4 "$ROOT/usr/lib/libSDL-1.2.so.0"
 ln -sf libSDL-1.2.so.0.11.4 "$ROOT/usr/lib/libSDL.so"
+
+rm -f "$ROOT/usr/lib/libSDL2-2.0.so.0.16.0"
+cp -f "$BASE/staging/usr/lib/libSDL2-2.0.so.0.3000.11" "$ROOT/usr/lib/libSDL2-2.0.so.0.3000.11"
+chmod 755 "$ROOT/usr/lib/libSDL2-2.0.so.0.3000.11"
+ln -sf libSDL2-2.0.so.0.3000.11 "$ROOT/usr/lib/libSDL2-2.0.so.0"
+ln -sf libSDL2-2.0.so.0.3000.11 "$ROOT/usr/lib/libSDL2.so"
 
 echo "=== 3. Installing dropbear 2025.87 (SSH/SCP/dbclient) via inetd ==="
 cp -f "$BASE/staging/usr/sbin/dropbearmulti" "$ROOT/usr/sbin/dropbearmulti"
@@ -119,8 +125,8 @@ case "$1" in
             usleep 25000 2>/dev/null || sleep 1
             i=$((i + 1))
         done
-        /sbin/udevadm trigger --action=add /dev/mmcblk1* /dev/sd* 2>/dev/null
-        /sbin/udevadm settle --timeout=2 2>/dev/null
+        /sbin/udevadm trigger --action=add --subsystem-match=block --sysname-match='mmcblk1p*' --sysname-match='sd[a-z][0-9]*' 2>/dev/null
+        /sbin/udevadm settle --timeout=3 2>/dev/null
         ;;
 esac
 exit 0
@@ -149,5 +155,5 @@ fakeroot -- sh -c "
 echo "=== 8. Verification ==="
 unsquashfs -s "$OUT"
 ls -lh "$STOCK" "$OUT"
-unsquashfs -ll "$OUT" | grep -E "(bin/busybox|fusermount|libSDL-1\.2\.so\.0\.11\.4|dropbearmulti|libperfhud|MidnightMinimal/skin\.conf|S05retrofw|g_ether\.ko|usr/bin/gmenunx)$"
+unsquashfs -ll "$OUT" | grep -E "(bin/busybox|fusermount|libSDL-1\.2\.so\.0\.11\.4|libSDL2-2\.0\.so\.0\.3000\.11|dropbearmulti|libperfhud|MidnightMinimal/skin\.conf|S05retrofw|S60udev|g_ether\.ko|usr/bin/gmenunx)$"
 md5sum "$OUT"
