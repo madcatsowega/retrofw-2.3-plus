@@ -114,18 +114,25 @@ exit 0
 EOF
 chmod 755 "$ROOT/etc/init.d/S10udev"
 
-# Fast S60udev: wait briefly for udevd control socket, then mount external SD synchronously
-# before GMenuNX+ starts (~150ms vs 1.2s stock full-sysfs udev trigger!)
+# Skip swap partitions in 99-media-automount.rules (prevents 3s exfat/udf probe stall & empty /media/mmcblk1p2)
+sed -i '/IMPORT{program}="\/sbin\/blkid -o udev -p %N"/a ACTION=="add", ENV{ID_FS_TYPE}=="swap", GOTO="end"' \
+    "$ROOT/etc/udev/rules.d/99-media-automount.rules"
+
+# Fast S60udev: wait briefly for udevd control socket, then trigger external SD/USB block
+# partition uevents directly via /sys/block (Linux 2.6.31 CONFIG_SYSFS_DEPRECATED_V2 does
+# not populate /sys/class/block, so udevadm --subsystem-match=block matches 0 devices!)
 cat << 'EOF' > "$ROOT/etc/init.d/S60udev"
 #!/bin/sh
 case "$1" in
     start)
         i=0
-        while [ ! -S /run/udev/control ] && [ "$i" -lt 20 ]; do
+        while [ ! -S /run/udev/control ] && [ "$i" -lt 40 ]; do
             usleep 25000 2>/dev/null || sleep 1
             i=$((i + 1))
         done
-        /sbin/udevadm trigger --action=add --subsystem-match=block --sysname-match='mmcblk1p*' --sysname-match='sd[a-z][0-9]*' 2>/dev/null
+        for u in /sys/block/mmcblk1/mmcblk1p*/uevent /sys/block/sd*/sd*/uevent; do
+            [ -w "$u" ] && echo add > "$u" 2>/dev/null
+        done
         /sbin/udevadm settle --timeout=3 2>/dev/null
         ;;
 esac
