@@ -6,19 +6,30 @@ Your existing RetroFW 2.3 games, emulators, saves, and OPKs continue to work out
 
 ---
 
-## What's Better in RetroFW 2.3+? *(In Plain English)*
+## Features & Enhancements
 
-- **Much Faster Startup (~3.5 seconds)**: Stock RetroFW 2.3 takes over 5 seconds to reach the menu. RetroFW 2.3+ trims out slow startup delays and mounts your external SD card in a quarter of a second, getting you into your games noticeably faster.
-- **A Fresh, Modern Look Out of the Box**: Includes our upgraded **GMenuNX+ Modern** launcher with 4 clean minimalist themes (**MidnightMinimal** by default, plus **Amber**, **Crimson**, and **Emerald**), sharp fonts, smooth icons, and a built-in **Performance HUD** you can toggle with one tap from the `SELECT` menu.
-- **Snappier Menus & Much Faster Game Search**: Fixed a menu memory leak, added text caching, and rewrote the game search index so searching large ROM collections feels instant instead of sluggish.
-- **Crisp, Reliable Controls**: Fixed double-skipping in menus/tabs when tapping buttons, and fixed a hang that could happen if you booted with a USB cable plugged in.
-- **Real Pitch-Black Sleep & Better Battery Life**:
-  - Idle sleep now truly shuts off the screen backlight (pitch black instead of glowing gray) and wakes cleanly on any button press — even at the lowest brightness setting (`1`).
-  - Menus default to a cool, battery-friendly **420 MHz** (adjustable from `240` to `816 MHz` in Settings), while games still boost cleanly to whatever clock speed you pick.
-- **Faster Graphics & Audio Across Existing Games**: The core graphics/sound library (**SDL 1.2**) now uses the RS-97's hidden **MXU hardware accelerator**, speeding up screen fills (`4.7×` faster), audio mixing (`2.3×` faster), and sprite copies with zero visual changes.
-- **Real SDL2 Support — Unlocking Modern Ports & Decomps**: Stock RetroFW 2.3 shipped an unfinished "dummy" SDL2 library that couldn't display anything on screen. RetroFW 2.3+ includes a brand-new, working **SDL 2.30.11** display/input/audio driver with hardware scaling up to `800×600`, opening the door to modern ports (EasyRPG, Cataclysm, OpenLara, modern `fheroes2`, 2D decomps, and more) without backporting to SDL 1.2!
-- **Smarter Memory Management**: Uses fast **compressed RAM (`ramzswap0`)** ahead of SD-card swap so memory-hungry ports and emulators stay responsive instead of stuttering or crashing.
-- **Modern SSH / SCP File Transfers + On-Device Terminal**: Adds **Dropbear SSH/SCP** alongside Telnet/FTP (only runs when you connect, using zero memory when idle) and seeds the **`st` Terminal** app on first boot.
+### System, Power & Performance
+- **Faster Boot & Shutdown:** Trimmed startup delays and sped up SD card detection so the handheld boots into the menu in ~3.5 seconds (down from over 5 seconds) and powers down cleanly.
+- **True Pitch-Black Sleep Mode:** Standby now fully shuts off the screen backlight instead of leaving a dim gray glow, extending battery life and waking cleanly on any button press—even at the lowest brightness setting (`1`).
+- **Battery-Friendly Menus & Smooth Clock Scaling:** Menus default to a cool 420 MHz to conserve battery, while games scale smoothly to your chosen clock speed with steady 60 Hz display timing (typically stable up to ~660–678 MHz depending on the individual handheld, with extra headroom available in settings).
+- **System-Wide Graphics & Audio Acceleration:** Unlocked the handheld's built-in hardware accelerator (MXU) in both the kernel and the core SDL 1.2 library, giving existing games and emulators faster screen drawing (`4.7×` fills) and audio mixing (`2.3×`) automatically.
+- **Smarter Memory Management:** Prioritizes fast compressed RAM (`ramzswap0`) before touching SD-card swap, keeping memory-heavy games and ports responsive instead of stuttering or crashing.
+- **Drop-In Compatibility:** Existing RetroFW 2.3 games, saves, and OPK apps continue to work out of the box, with both a fresh flashable SD image (auto-expanding on first boot) and a non-destructive in-place upgrade.
+
+### GMenuNX+ Launcher & Apps
+- **Modern Refreshed Interface:** Ships with an updated **GMenuNX+ Modern** launcher featuring 4 clean minimalist themes (**MidnightMinimal** by default, plus **Amber**, **Crimson**, and **Emerald**), sharper fonts, and smoother navigation.
+- **Recents, Instant Search & Play Time Tracking:** Jump right back into recently played games, filter large ROM libraries instantly with a rewritten search index, and keep track of how long you've spent in each title.
+- **Built-In Performance Overlay:** Toggle a live on-screen performance HUD for any game or app straight from the `SELECT` menu.
+- **Polished Controls & Stability:** Fixed double-skipping when tapping menu/tab buttons, patched a menu memory leak, and fixed a hang when booting with a USB cable connected.
+- **On-Device Terminal App:** Includes a lightweight `st` terminal pre-installed on first boot for quick troubleshooting and tinkering right on the handheld.
+
+### Connectivity & Modern Game Port Support
+- **More Reliable USB & Modern File Transfers:** Fixed USB connection reliability across host/device modes and added lightweight Dropbear SSH/SCP support (using zero memory when idle) alongside Telnet and FTP.
+- **Complete, Working SDL2 Support:** Replaced RetroFW 2.3's unfinished dummy SDL2 library with a full native **SDL 2.30.11** video, input, and audio driver with hardware scaling up to `800×600`—unlocking modern indie ports and game decompilations (EasyRPG, Cataclysm, OpenLara, modern `fheroes2`, 2D decomps, and more) without needing to backport them to SDL 1.2.
+
+### Optimized SNES & PlayStation Emulators
+- **PocketSNES+ (Super Nintendo):** Major performance upgrades to tile rendering, zero-LUT transparency blending, cache-friendly screen clearing, MXU audio mixing, and special-chip (SA-1) handling—bringing demanding classics like *Donkey Kong Country 2*, *Kirby Super Star*, and *Super Mario RPG* up to much smoother, more playable speeds, alongside smoother frameskip options.
+- **PCSX4All+ (PlayStation):** Extensive 3D geometry, texture/lighting, MXU audio, and memory optimizations that deliver major frame rate gains across the PS1 library, plus compressed **`.chd`** disc support, hitch-free background CD loading, fixed save states, and a refreshed MidnightMinimal UI.
 
 ---
 
@@ -46,7 +57,7 @@ Already have RetroFW 2.3 set up with all your ROMs and saves? Download `RetroFW-
 - **Kernel (`RetroFW Kernel+ #12`)** — [`madcatsowega/retrofw-kernel-plus`](https://github.com/madcatsowega/retrofw-kernel-plus):
   - ABI-compatible JZ4760B MXU SIMD register context-switch (`0/400` errors on stress test; 100% compatible with stock `.ko` modules).
   - LZO `/dev/ramzswap0` (48 MiB, priority 100) ahead of SD swap.
-  - Atomic `/proc/jz/clock` (`240–816 MHz`) with 60 Hz LCD `LPCDR` + `DDRC` sync and dual-tier `1:3:6:6` OC (`708–816 MHz`).
+  - Atomic `/proc/jz/clock` (`240–816 MHz` configurable; typical silicon stability ~660–678 MHz) with 60 Hz LCD `LPCDR` + `DDRC` sync and dual-tier `1:3:6:6` OC mode.
   - True PWM-off `backlight=0` on `Y030XX067A` with automatic 2 ms 20% LED boost-IC wake kick; physical brightness button steps `1 → 5 → 10..100 → 1`.
   - `HZ=250`, `PREEMPT_VOLUNTARY`, `!SLUB_DEBUG`, `noop` I/O scheduler, SquashFS fragment cache `8`, quiet UART boot (`DEFAULT_CONSOLE_LOGLEVEL=4`).
 - **Native `SDL 2.30.11` (`libSDL2-2.0.so.0.3000.11`)**:
@@ -64,8 +75,8 @@ Already have RetroFW 2.3 set up with all your ROMs and saves? Download `RetroFW-
 ## Companion `+` Projects
 - **Kernel+**: [`madcatsowega/retrofw-kernel-plus`](https://github.com/madcatsowega/retrofw-kernel-plus)
 - **Launcher**: [`madcatsowega/gmenunx-plus`](https://github.com/madcatsowega/gmenunx-plus)
-- **PlayStation**: [`madcatsowega/pcsx4all-plus`](https://github.com/madcatsowega/pcsx4all-plus) (`PCSX4All+` — CHD, AsyncCD, MIPS GTE, MXU SPU)
-- **SNES**: [`madcatsowega/pocketsnes-plus`](https://github.com/madcatsowega/pocketsnes-plus) (`PocketSNES+ v2` — Fast SA-1, MXU echo/FIR, Half-V/Smooth frameskip)
+- **PlayStation**: [`madcatsowega/pcsx4all-plus`](https://github.com/madcatsowega/pcsx4all-plus) (`PCSX4All+` — MidnightMinimal UI, MonoCLUT/LitCLUT GPU, MIPS32 MADD GTE, MXU SPU, CHD + AsyncCD)
+- **SNES**: [`madcatsowega/pocketsnes-plus`](https://github.com/madcatsowega/pocketsnes-plus) (`PocketSNES+` — zero-LUT SWAR color math, occlusion-skip `DrawTile16`, direct BW-RAM & SA-1 shutdown, `pref 30` clears, MXU echo/FIR)
 
 ---
 
