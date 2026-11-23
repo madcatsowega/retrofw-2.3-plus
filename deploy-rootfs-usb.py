@@ -56,7 +56,7 @@ print("4. Atomically swapping /boot/rootfs-2.4.squashfs -> /boot/rootfs.squashfs
 print(run("mv -f /boot/rootfs-2.4.squashfs /boot/rootfs.squashfs && sync && sync"))
 
 print("5. Final drop_caches and physical MD5 verification of /boot/rootfs.squashfs...")
-run("echo 3 > /proc/sys/vm/drop_caches; sleep 1", timeout=20.0)
+run("echo 3 > /proc/sys/vm/drop_caches; sleep 1", timeout=45.0)
 out = run("ls -lh /boot && md5sum /boot/rootfs.squashfs", timeout=30.0)
 print(out)
 assert exp_md5 in out, f"FINAL READ-BACK MD5 MISMATCH! Expected {exp_md5}"
