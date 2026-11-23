@@ -11,3 +11,6 @@ bench/sdl_zlib_bench
 *.lo
 *.so*
 *.squashfs
+boot-assets/
+release/
+sdl2-retrofw/sdl2_test

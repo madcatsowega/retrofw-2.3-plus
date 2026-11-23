@@ -53,6 +53,10 @@ if [ -x /home/sean/retrofw-emulators/rs97_st-sdl/st ]; then
     cp -f /home/sean/retrofw-emulators/rs97_st-sdl/st "$ROOT/usr/bin/st"
     chmod 755 "$ROOT/usr/bin/st"
 fi
+if [ -f /home/sean/retrofw-emulators/rs97_st-sdl/st.opk ]; then
+    mkdir -p "$ROOT/usr/share/retrofw-plus"
+    cp -f /home/sean/retrofw-emulators/rs97_st-sdl/st.opk "$ROOT/usr/share/retrofw-plus/st.opk"
+fi
 
 echo "=== 5. Baking Kernel+ #12 matching .ko modules ==="
 MODSRC="/home/sean/retrofw-kernel-plus/modules-out/lib/modules/2.6.31.3"
@@ -82,6 +86,11 @@ case "$1" in
             /sbin/swapon -a 2>/dev/null
             if [ -d /home/retrofw ] && [ ! -f /home/retrofw/.dropbear_ed25519_key ] && [ -x /usr/bin/dropbearkey ]; then
                 /usr/bin/dropbearkey -t ed25519 -f /home/retrofw/.dropbear_ed25519_key >/dev/null 2>&1
+            fi
+            if [ -d /home/retrofw ] && [ ! -f /home/retrofw/.retrofw-plus-init ] && [ -f /usr/share/retrofw-plus/st.opk ]; then
+                mkdir -p /home/retrofw/apps 2>/dev/null
+                [ -f /home/retrofw/apps/st.opk ] || cp /usr/share/retrofw-plus/st.opk /home/retrofw/apps/st.opk 2>/dev/null
+                touch /home/retrofw/.retrofw-plus-init 2>/dev/null
             fi
         ) &
         ;;
