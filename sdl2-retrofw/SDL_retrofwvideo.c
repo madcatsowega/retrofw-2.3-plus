@@ -555,6 +555,123 @@ static void RETROFW_VideoQuit(_THIS)
     RETROFW_LeaveGraphicsTTY(data);
 }
 
+/* Zero-copy /dev/fb0 backbuffer helpers for GC200 hardware 2D renderer & native ports */
+__attribute__((visibility("default")))
+int SDLCALL SDL_RetroFW_PrepareBackbuffer(SDL_Window *window,
+                                                   Uint32 *out_phys,
+                                                   void **out_virt,
+                                                   int *out_w,
+                                                   int *out_h,
+                                                   int *out_stride)
+{
+    SDL_VideoDevice *_this = SDL_GetVideoDevice();
+    SDL_VideoData *data;
+    int w, h, next_page;
+
+    if (!_this || !_this->driverdata || !window) {
+        return SDL_SetError("RetroFW video device not active");
+    }
+    data = (SDL_VideoData *)_this->driverdata;
+    if (data->fb_fd < 0) {
+        return SDL_SetError("RetroFW framebuffer device not open");
+    }
+
+    SDL_GetWindowSizeInPixels(window, &w, &h);
+    if (w <= 0 || h <= 0) {
+        w = 320;
+        h = 240;
+    }
+
+    if (!data->mode_set || !data->fb_mem || (int)data->vinfo.xres != w || (int)data->vinfo.yres != h) {
+        if (RETROFW_ConfigureFB(data, w, h) < 0) {
+            return -1;
+        }
+    }
+
+    if (!data->fb_mem) {
+        return SDL_SetError("RetroFW framebuffer not mapped");
+    }
+
+    next_page = (data->num_bufs >= 2) ? ((data->cur_page + 1) % data->num_bufs) : 0;
+
+    if (out_phys)   *out_phys   = (Uint32)(data->finfo.smem_start + (size_t)next_page * data->fb_page_bytes);
+    if (out_virt)   *out_virt   = (void *)(data->fb_mem + (size_t)next_page * data->fb_page_bytes);
+    if (out_w)      *out_w      = (int)data->vinfo.xres;
+    if (out_h)      *out_h      = (int)data->vinfo.yres;
+    if (out_stride) *out_stride = (int)data->fb_line_length;
+    return 0;
+}
+
+__attribute__((visibility("default")))
+int SDLCALL SDL_RetroFW_PrepareFrontbuffer(SDL_Window *window,
+                                           Uint32 *out_phys,
+                                           void **out_virt,
+                                           int *out_w,
+                                           int *out_h,
+                                           int *out_stride)
+{
+    SDL_VideoDevice *_this = SDL_GetVideoDevice();
+    SDL_VideoData *data;
+    int w, h;
+
+    if (!_this || !_this->driverdata || !window) {
+        return SDL_SetError("RetroFW video device not active");
+    }
+    data = (SDL_VideoData *)_this->driverdata;
+    if (data->fb_fd < 0) {
+        return SDL_SetError("RetroFW framebuffer device not open");
+    }
+
+    SDL_GetWindowSizeInPixels(window, &w, &h);
+    if (w <= 0 || h <= 0) {
+        w = 320;
+        h = 240;
+    }
+
+    if (!data->mode_set || !data->fb_mem || (int)data->vinfo.xres != w || (int)data->vinfo.yres != h) {
+        if (RETROFW_ConfigureFB(data, w, h) < 0) {
+            return -1;
+        }
+    }
+
+    if (!data->fb_mem) {
+        return SDL_SetError("RetroFW framebuffer not mapped");
+    }
+
+    if (out_phys)   *out_phys   = (Uint32)(data->finfo.smem_start + (size_t)data->cur_page * data->fb_page_bytes);
+    if (out_virt)   *out_virt   = (void *)(data->fb_mem + (size_t)data->cur_page * data->fb_page_bytes);
+    if (out_w)      *out_w      = (int)data->vinfo.xres;
+    if (out_h)      *out_h      = (int)data->vinfo.yres;
+    if (out_stride) *out_stride = (int)data->fb_line_length;
+    return 0;
+}
+
+__attribute__((visibility("default")))
+int SDLCALL SDL_RetroFW_FlipBackbuffer(SDL_Window *window)
+{
+    SDL_VideoDevice *_this = SDL_GetVideoDevice();
+    SDL_VideoData *data;
+    int next_page;
+
+    (void)window;
+    if (!_this || !_this->driverdata) {
+        return -1;
+    }
+    data = (SDL_VideoData *)_this->driverdata;
+    if (data->fb_fd < 0) {
+        return -1;
+    }
+
+    if (data->num_bufs >= 2) {
+        next_page = (data->cur_page + 1) % data->num_bufs;
+        data->vinfo.xoffset = 0;
+        data->vinfo.yoffset = (Uint32)(next_page * (int)data->vinfo.yres);
+        ioctl(data->fb_fd, FBIOPAN_DISPLAY, &data->vinfo);
+        data->cur_page = next_page;
+    }
+    return 0;
+}
+
 #endif /* SDL_VIDEO_DRIVER_RETROFW */
 
 /* vi: set ts=4 sw=4 expandtab: */

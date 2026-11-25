@@ -58,12 +58,28 @@ if [ -f /home/sean/retrofw-emulators/rs97_st-sdl/st.opk ]; then
     cp -f /home/sean/retrofw-emulators/rs97_st-sdl/st.opk "$ROOT/usr/share/retrofw-plus/st.opk"
 fi
 
-echo "=== 5. Baking Kernel+ #12 matching .ko modules ==="
+echo "=== 5. Baking Kernel+ #12 matching .ko modules (+ Vivante GC200 2D GPU & JZ4760B AUX core drivers) ==="
 MODSRC="/home/sean/retrofw-kernel-plus/modules-out/lib/modules/2.6.31.3"
 if [ -d "$MODSRC" ]; then
     rm -rf "$ROOT/lib/modules/2.6.31.3"
     mkdir -p "$ROOT/lib/modules"
     cp -a "$MODSRC" "$ROOT/lib/modules/2.6.31.3"
+fi
+if [ -f /home/sean/retrofw-gc200/kmod/gc200.ko ]; then
+    mkdir -p "$ROOT/lib/modules/2.6.31.3/kernel/drivers/gpu"
+    cp -f /home/sean/retrofw-gc200/kmod/gc200.ko "$ROOT/lib/modules/2.6.31.3/kernel/drivers/gpu/gc200.ko"
+    chmod 644 "$ROOT/lib/modules/2.6.31.3/kernel/drivers/gpu/gc200.ko"
+    if [ -f "$ROOT/lib/modules/2.6.31.3/modules.dep" ] && ! grep -q "gc200.ko" "$ROOT/lib/modules/2.6.31.3/modules.dep"; then
+        echo "kernel/drivers/gpu/gc200.ko:" >> "$ROOT/lib/modules/2.6.31.3/modules.dep"
+    fi
+fi
+if [ -f /home/sean/retrofw-aux/kmod/jz_aux.ko ]; then
+    mkdir -p "$ROOT/lib/modules/2.6.31.3/kernel/drivers/misc"
+    cp -f /home/sean/retrofw-aux/kmod/jz_aux.ko "$ROOT/lib/modules/2.6.31.3/kernel/drivers/misc/jz_aux.ko"
+    chmod 644 "$ROOT/lib/modules/2.6.31.3/kernel/drivers/misc/jz_aux.ko"
+    if [ -f "$ROOT/lib/modules/2.6.31.3/modules.dep" ] && ! grep -q "jz_aux.ko" "$ROOT/lib/modules/2.6.31.3/modules.dep"; then
+        echo "kernel/drivers/misc/jz_aux.ko:" >> "$ROOT/lib/modules/2.6.31.3/modules.dep"
+    fi
 fi
 
 echo "=== 6. Optimizing cold-boot init scripts & runtime tuning ==="
@@ -78,8 +94,14 @@ case "$1" in
         done
         [ -w /proc/sys/vm/mmap_min_addr ] && echo 0 > /proc/sys/vm/mmap_min_addr 2>/dev/null
         [ -w /proc/sys/vm/swappiness ] && echo 60 > /proc/sys/vm/swappiness 2>/dev/null
-        # Activate LZO compressed RAM swap (prio 100) + SD swap + SSH host key in background
+        # Activate LZO compressed RAM swap (prio 100) + SD swap + GC200 2D GPU + JZ4760B AUX core + SSH host key in background
         (
+            if [ -f /lib/modules/2.6.31.3/kernel/drivers/gpu/gc200.ko ] && [ ! -c /dev/gc200 ]; then
+                insmod /lib/modules/2.6.31.3/kernel/drivers/gpu/gc200.ko >/dev/null 2>&1
+            fi
+            if [ -f /lib/modules/2.6.31.3/kernel/drivers/misc/jz_aux.ko ] && [ ! -c /dev/jz_aux ]; then
+                insmod /lib/modules/2.6.31.3/kernel/drivers/misc/jz_aux.ko >/dev/null 2>&1
+            fi
             if [ -b /dev/ramzswap0 ] && ! grep -q ramzswap0 /proc/swaps 2>/dev/null; then
                 mkswap /dev/ramzswap0 >/dev/null 2>&1 && swapon -p 100 /dev/ramzswap0 2>/dev/null
             fi
@@ -199,5 +221,5 @@ fakeroot -- sh -c "
 echo "=== 8. Verification ==="
 unsquashfs -s "$OUT"
 ls -lh "$STOCK" "$OUT"
-unsquashfs -ll "$OUT" | grep -E "(bin/busybox|fusermount|libSDL-1\.2\.so\.0\.11\.4|libSDL2-2\.0\.so\.0\.3000\.11|dropbearmulti|libperfhud|MidnightMinimal/skin\.conf|S05retrofw|S60udev|g_ether\.ko|usr/bin/gmenunx)$"
+unsquashfs -ll "$OUT" | grep -E "(bin/busybox|fusermount|libSDL-1\.2\.so\.0\.11\.4|libSDL2-2\.0\.so\.0\.3000\.11|dropbearmulti|libperfhud|MidnightMinimal/skin\.conf|S05retrofw|S60udev|g_ether\.ko|gc200\.ko|jz_aux\.ko|usr/bin/gmenunx)$"
 md5sum "$OUT"

@@ -31,8 +31,8 @@ wait_for(b"\x1b[6n", 1.5)
 s.sendall(b"\x1b[24;80R")
 wait_for(b"# ", 2.0)
 
-print("1. Cleaning partial file & moving stock backup to /home/retrofw/ (keeping /boot >65 MiB free for atomic swap)...")
-print(run("rm -f /boot/rootfs-2.4.squashfs"))
+print("1. Cleaning partial/FSCK files & moving stock backup to /home/retrofw/ (keeping /boot >65 MiB free for atomic swap)...")
+print(run("rm -f /boot/rootfs-2.4.squashfs /boot/FSCK*.REC /boot/fsck*.rec"))
 print(run("if [ -f /boot/rootfs.squashfs.2.3.bak ]; then [ -f /home/retrofw/rootfs.squashfs.2.3.bak ] || cp /boot/rootfs.squashfs.2.3.bak /home/retrofw/rootfs.squashfs.2.3.bak; rm -f /boot/rootfs.squashfs.2.3.bak; fi; sync"))
 print(run("ls -lh /boot /home/retrofw/rootfs.squashfs.2.3.bak && df -h /boot"))
 
